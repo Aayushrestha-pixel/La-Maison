@@ -1,0 +1,161 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #fdf6ee;
+  --bg-alt: #f5ece0;
+  --primary: #7a1a1a;
+  --primary-dark: #5a1010;
+  --accent: #c9983a;
+  --dark: #1e0f0a;
+  --text: #3d2012;
+  --text-muted: #7a5c4a;
+  --card: #fff9f2;
+  --border: #e8d5c0;
+  --white: #ffffff;
+
+  --font-heading: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Nunito', sans-serif;
+
+  --radius: 8px;
+  --shadow: 0 2px 16px rgba(30, 15, 10, 0.08);
+  --shadow-md: 0 4px 24px rgba(30, 15, 10, 0.13);
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--dark);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+}
+
+/* reusable */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section {
+  padding: 80px 0;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-title h2 {
+  font-size: 2.8rem;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.section-title p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.section-title .divider {
+  width: 56px;
+  height: 2px;
+  background: var(--accent);
+  margin: 12px auto 0;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-confirmed { background: #d4edda; color: #155724; }
+.badge-pending   { background: #fff3cd; color: #856404; }
+.badge-cancelled { background: #f8d7da; color: #721c24; }
+
+/* page hero banner (not the home hero) */
+.page-banner {
+  background: var(--primary);
+  padding: 60px 0;
+  text-align: center;
+}
+
+.page-banner h1 {
+  color: var(--white);
+  font-size: 3rem;
+}
+
+.page-banner p {
+  color: rgba(255,255,255,0.75);
+  margin-top: 8px;
+}
