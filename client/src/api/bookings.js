@@ -1,5 +1,5 @@
 
-const BASE = 'http://localhost:8000/api'
+const BASE = 'http://localhost:8000'
 
 export async function createBooking(data) {
   const res = await fetch(`${BASE}/bookings`, {
@@ -16,10 +16,19 @@ export async function createBooking(data) {
   return res.json()
 }
 
+// export async function getAllBookings() {
+//   const res = await fetch(`${BASE}/bookings`)
+//   if (!res.ok) throw new Error('Failed to fetch bookings')
+//   return res.json()
+// }
 export async function getAllBookings() {
   const res = await fetch(`${BASE}/bookings`)
+
   if (!res.ok) throw new Error('Failed to fetch bookings')
-  return res.json()
+
+  const json = await res.json()
+
+  return json.data  // ✅ ALWAYS return array
 }
 
 export async function updateBookingStatus(id, status) {

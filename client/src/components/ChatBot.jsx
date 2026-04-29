@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import './ChatBot.css'
 
 // TODO: move this to env var before going live
-const CHAT_URL = 'http://localhost:8000/api/chat'
+const CHAT_URL = 'http://localhost:8000/chat'
 
 const INITIAL_MSG = {
   from: 'bot',

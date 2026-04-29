@@ -15,13 +15,13 @@ app.use(cors({ origin: 'http://localhost:5173' }))
 app.use(express.json())
 
 const swaggerDoc = yaml.load(fs.readFileSync(path.join(__dirname, 'la-maison-openapi.yaml'), 'utf8'))
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc))
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc))
 
-app.use('/api/bookings', bookingRoutes)
-app.use('/api/menu', menuRoutes)
-app.use('/api/chat', chatRoutes)
+app.use('/bookings', bookingRoutes)
+app.use('/menu', menuRoutes)
+app.use('/chat', chatRoutes)
 
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
