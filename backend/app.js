@@ -11,7 +11,9 @@ const chatRoutes = require('./routes/chat')
 
 const app = express()
 
-app.use(cors({ origin: 'http://localhost:5173' }))
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN || 'http://localhost'
+}))
 app.use(express.json())
 
 const swaggerDoc = yaml.load(fs.readFileSync(path.join(__dirname, 'la-maison-openapi.yaml'), 'utf8'))

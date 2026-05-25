@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: lamaison-backend
+    environment:
+      - ALLOWED_ORIGIN=http://localhost
+    networks:
+      - lamaison-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+    container_name: lamaison-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - lamaison-net
+    restart: unless-stopped
+
+networks:
+  lamaison-net:
+    driver: bridge

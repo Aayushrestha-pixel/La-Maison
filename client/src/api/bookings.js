@@ -1,5 +1,4 @@
-
-const BASE = 'http://localhost:8000'
+const BASE = '/api'
 
 export async function createBooking(data) {
   const res = await fetch(`${BASE}/bookings`, {
