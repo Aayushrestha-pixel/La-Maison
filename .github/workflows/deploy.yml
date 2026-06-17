@@ -1,0 +1,91 @@
+name: ECS Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: terraform-state
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Terraform Init
+        working-directory: ECS
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ECS
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ECS
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: ECS
+        run: terraform apply -auto-approve
+
+      - name: Get Terraform Outputs
+        id: tf_output
+        working-directory: ECS
+        run: |
+          echo "BACKEND_ECR=$(terraform output -raw backend_ecr_url)" >> $GITHUB_ENV
+          echo "CLIENT_ECR=$(terraform output -raw client_ecr_url)" >> $GITHUB_ENV
+          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_ENV
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push Backend
+        working-directory: backend
+        run: |
+          docker build -t ${{ env.BACKEND_ECR }}:latest .
+          docker push ${{ env.BACKEND_ECR }}:latest
+
+      - name: Build & Push Client
+        working-directory: client
+        run: |
+          docker build -t ${{ env.CLIENT_ECR }}:latest .
+          docker push ${{ env.CLIENT_ECR }}:latest
+
+      - name: Update ECS Services
+        run: |
+          for SERVICE in la-maison-backend la-maison-client; do
+            FAMILY=$SERVICE
+            TD_JSON=$(aws ecs describe-task-definition --task-definition $FAMILY --query taskDefinition)
+
+            NEW_TD_ARN=$(aws ecs register-task-definition \
+              --family "$(echo "$TD_JSON" | jq -r '.family')" \
+              --network-mode "$(echo "$TD_JSON" | jq -r '.networkMode')" \
+              --container-definitions "$(echo "$TD_JSON" | jq -c '.containerDefinitions')" \
+              --execution-role-arn "$(echo "$TD_JSON" | jq -r '.executionRoleArn')" \
+              --cpu "$(echo "$TD_JSON" | jq -r '.cpu')" \
+              --memory "$(echo "$TD_JSON" | jq -r '.memory')" \
+              --requires-compatibilities "$(echo "$TD_JSON" | jq -c '.requiresCompatibilities')" \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
+
+            aws ecs update-service \
+              --cluster ${{ env.CLUSTER_NAME }} \
+              --service $SERVICE \
+              --task-definition "$NEW_TD_ARN" \
+              --force-new-deployment
+          done

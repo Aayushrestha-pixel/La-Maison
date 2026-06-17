@@ -1,11 +1,10 @@
-FROM node:18-bookworm-slim AS deps
+FROM node:20-alpine3.20 AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-FROM gcr.io/distroless/nodejs18-debian12:nonroot
+FROM gcr.io/distroless/nodejs20-debian12:nonroot
 WORKDIR /app
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY routes ./routes
 COPY controllers ./controllers
