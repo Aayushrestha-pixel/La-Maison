@@ -1,24 +1,20 @@
-name: ECS Deploy
+name: Deploy ECS
 
 on:
   push:
     branches:
       - main
 
-concurrency:
-  group: terraform-state
-  cancel-in-progress: true
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    defaults:
+      run:
+        working-directory: backend
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -27,65 +23,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: Terraform Init
-        working-directory: ECS
-        run: terraform init
-
-      - name: Terraform Validate
-        working-directory: ECS
-        run: terraform validate
-
-      - name: Terraform Plan
-        working-directory: ECS
-        run: terraform plan
-
-      - name: Terraform Apply
-        working-directory: ECS
-        run: terraform apply -auto-approve
-
-      - name: Get Terraform Outputs
-        id: tf_output
-        working-directory: ECS
-        run: |
-          echo "BACKEND_ECR=$(terraform output -raw backend_ecr_url)" >> $GITHUB_ENV
-          echo "CLIENT_ECR=$(terraform output -raw client_ecr_url)" >> $GITHUB_ENV
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_ENV
-
       - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & Push Backend
-        working-directory: backend
+      - name: Build, Tag and Push Image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t ${{ env.BACKEND_ECR }}:latest .
-          docker push ${{ env.BACKEND_ECR }}:latest
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
 
-      - name: Build & Push Client
-        working-directory: client
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:latest
+
+      - name: Force New Deployment
         run: |
-          docker build -t ${{ env.CLIENT_ECR }}:latest .
-          docker push ${{ env.CLIENT_ECR }}:latest
-
-      - name: Update ECS Services
-        run: |
-          for SERVICE in la-maison-backend la-maison-client; do
-            FAMILY=$SERVICE
-            TD_JSON=$(aws ecs describe-task-definition --task-definition $FAMILY --query taskDefinition)
-
-            NEW_TD_ARN=$(aws ecs register-task-definition \
-              --family "$(echo "$TD_JSON" | jq -r '.family')" \
-              --network-mode "$(echo "$TD_JSON" | jq -r '.networkMode')" \
-              --container-definitions "$(echo "$TD_JSON" | jq -c '.containerDefinitions')" \
-              --execution-role-arn "$(echo "$TD_JSON" | jq -r '.executionRoleArn')" \
-              --cpu "$(echo "$TD_JSON" | jq -r '.cpu')" \
-              --memory "$(echo "$TD_JSON" | jq -r '.memory')" \
-              --requires-compatibilities "$(echo "$TD_JSON" | jq -c '.requiresCompatibilities')" \
-              --query 'taskDefinition.taskDefinitionArn' \
-              --output text)
-
-            aws ecs update-service \
-              --cluster ${{ env.CLUSTER_NAME }} \
-              --service $SERVICE \
-              --task-definition "$NEW_TD_ARN" \
-              --force-new-deployment
-          done
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service ${{ secrets.ECS_SERVICE }} \
+            --force-new-deployment 
