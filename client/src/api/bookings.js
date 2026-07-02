@@ -1,4 +1,4 @@
-const BASE = '/api'
+const BASE = 'http://concproject-alb-1190008323.ap-south-1.elb.amazonaws.com/aayush'
 
 export async function createBooking(data) {
   const res = await fetch(`${BASE}/bookings`, {
